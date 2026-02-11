@@ -62,6 +62,9 @@ protected:
 	// Called when the object is being destroyed
 	virtual void BeginDestroy() override;
 
+	// Original max speed
+	float originalMaxSpeed{};
+
 public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
@@ -70,4 +73,6 @@ public:
 	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
 
 	void SetSteeringBehavior(ISteeringBehavior* NewSteeringBehavior);
+
+	float GetOriginalMaxSpeed() { return originalMaxSpeed; };
 };

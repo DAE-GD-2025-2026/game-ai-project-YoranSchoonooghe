@@ -14,6 +14,8 @@ ASteeringAgent::ASteeringAgent()
 void ASteeringAgent::BeginPlay()
 {
 	Super::BeginPlay();
+
+	originalMaxSpeed = GetMaxLinearSpeed();
 }
 
 void ASteeringAgent::BeginDestroy()
