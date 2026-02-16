@@ -23,6 +23,8 @@ public:
 
 protected:
 	FTargetData Target;
+
+	void DrawTarget(ASteeringAgent& Agent);
 };
 
 // Your own SteeringBehaviors should follow here...
@@ -40,6 +42,18 @@ public:
 };
 
 class Arrive : public ISteeringBehavior
+{
+public:
+	SteeringOutput CalculateSteering(float DeltaT, ASteeringAgent& Agent) override;
+};
+
+class Face : public ISteeringBehavior
+{
+public:
+	SteeringOutput CalculateSteering(float DeltaT, ASteeringAgent& Agent) override;
+};
+
+class Pursuit : public ISteeringBehavior
 {
 public:
 	SteeringOutput CalculateSteering(float DeltaT, ASteeringAgent& Agent) override;
