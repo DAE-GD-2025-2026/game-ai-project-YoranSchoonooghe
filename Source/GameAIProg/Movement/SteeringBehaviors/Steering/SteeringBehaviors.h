@@ -24,6 +24,7 @@ public:
 protected:
 	FTargetData Target;
 
+	FVector2D CalculatePredictedPosition(ASteeringAgent& Agent);
 	void DrawTarget(ASteeringAgent& Agent);
 };
 
@@ -54,6 +55,12 @@ public:
 };
 
 class Pursuit : public ISteeringBehavior
+{
+public:
+	SteeringOutput CalculateSteering(float DeltaT, ASteeringAgent& Agent) override;
+};
+
+class Evade : public ISteeringBehavior
 {
 public:
 	SteeringOutput CalculateSteering(float DeltaT, ASteeringAgent& Agent) override;

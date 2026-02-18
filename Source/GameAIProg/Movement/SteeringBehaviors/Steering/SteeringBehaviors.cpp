@@ -128,13 +128,13 @@ SteeringOutput Pursuit::CalculateSteering(float DeltaT, ASteeringAgent& Agent)
 {
 	SteeringOutput steering{};
 
-	FVector2D predictedPosition;
-
 	Agent.SetMaxLinearSpeed(Agent.GetOriginalMaxSpeed() / 2.f);
 
-	const float timeToReachTarget = (Target.Position - Agent.GetPosition()).Length() / Agent.GetMaxLinearSpeed();
+	FVector2D predictedPosition = CalculatePredictedPosition(Agent);
 
-	predictedPosition = Target.Position + Target.LinearVelocity * timeToReachTarget;
+	//const float timeToReachTarget = (Target.Position - Agent.GetPosition()).Length() / Agent.GetMaxLinearSpeed();
+
+	//predictedPosition = Target.Position + Target.LinearVelocity * timeToReachTarget;
 
 	steering.LinearVelocity = predictedPosition - Agent.GetPosition();
 
@@ -144,7 +144,55 @@ SteeringOutput Pursuit::CalculateSteering(float DeltaT, ASteeringAgent& Agent)
 	return steering;
 }
 
+SteeringOutput Evade::CalculateSteering(float DeltaT, ASteeringAgent& Agent)
+{
+	SteeringOutput steering{};
+
+	Agent.SetMaxLinearSpeed(Agent.GetOriginalMaxSpeed() / 2.f);
+
+	FVector2D predictedPosition = CalculatePredictedPosition(Agent);
+
+	const float EVADE_RADIUS{ 300.f };
+	DrawDebugCircle(
+		Agent.GetWorld(),
+		FVector3d(Agent.GetPosition().X, Agent.GetPosition().Y, 0),
+		EVADE_RADIUS,
+		12,
+		FColor::Orange,
+		false,
+		-1.0f,
+		0U,
+		0.0f,
+		FVector(1, 0, 0),
+		FVector(0, 1, 0),
+		false
+	);
+
+	if ((predictedPosition - Agent.GetPosition()).Length() < EVADE_RADIUS)
+	{
+		steering.LinearVelocity = Agent.GetPosition() - predictedPosition;
+	}
+
+	DrawDebugPoint(Agent.GetWorld(), FVector(predictedPosition, 0), 5, FColor::Magenta);
+
+	return steering;
+}
+
+FVector2D ISteeringBehavior::CalculatePredictedPosition(ASteeringAgent& Agent)
+{
+	FVector2D predictedPosition;
+
+	const float MAX_TIME = { 0.7f };
+	float timeToReachTarget = (Target.Position - Agent.GetPosition()).Length() / Agent.GetMaxLinearSpeed();
+	timeToReachTarget = std::min(timeToReachTarget, MAX_TIME);
+
+	predictedPosition = Target.Position + Target.LinearVelocity * timeToReachTarget;
+
+	return predictedPosition;
+}
+
 void ISteeringBehavior::DrawTarget(ASteeringAgent& Agent)
 {
 	DrawDebugPoint(Agent.GetWorld(), FVector(Target.Position, 0), 5, FColor::Red);
 }
+
