@@ -128,13 +128,7 @@ SteeringOutput Pursuit::CalculateSteering(float DeltaT, ASteeringAgent& Agent)
 {
 	SteeringOutput steering{};
 
-	Agent.SetMaxLinearSpeed(Agent.GetOriginalMaxSpeed() / 2.f);
-
 	FVector2D predictedPosition = CalculatePredictedPosition(Agent);
-
-	//const float timeToReachTarget = (Target.Position - Agent.GetPosition()).Length() / Agent.GetMaxLinearSpeed();
-
-	//predictedPosition = Target.Position + Target.LinearVelocity * timeToReachTarget;
 
 	steering.LinearVelocity = predictedPosition - Agent.GetPosition();
 
@@ -147,8 +141,6 @@ SteeringOutput Pursuit::CalculateSteering(float DeltaT, ASteeringAgent& Agent)
 SteeringOutput Evade::CalculateSteering(float DeltaT, ASteeringAgent& Agent)
 {
 	SteeringOutput steering{};
-
-	Agent.SetMaxLinearSpeed(Agent.GetOriginalMaxSpeed() / 2.f);
 
 	FVector2D predictedPosition = CalculatePredictedPosition(Agent);
 
@@ -178,6 +170,44 @@ SteeringOutput Evade::CalculateSteering(float DeltaT, ASteeringAgent& Agent)
 	return steering;
 }
 
+SteeringOutput Wander::CalculateSteering(float DeltaT, ASteeringAgent& Agent)
+{
+	SteeringOutput steering{};
+	
+	FVector2D circleCenter;
+
+	circleCenter = Agent.GetPosition() + FVector2D(Agent.GetActorForwardVector().X, Agent.GetActorForwardVector().Y) * m_OffsetDistance;
+
+	int angleChange = rand() % (2 * m_MaxAngleChange + 1) - m_MaxAngleChange;
+	m_Angle = m_Angle + angleChange * PI / 180.0f;
+
+	const FVector2D pointOnCircle = FVector2D(
+		circleCenter.X + m_Radius * cosf(m_Angle),
+		circleCenter.Y + m_Radius * sinf(m_Angle)
+	);
+
+	steering.LinearVelocity = pointOnCircle - Agent.GetPosition();
+
+	DrawDebugCircle(
+		Agent.GetWorld(),
+		FVector(circleCenter, 0),
+		m_Radius,
+		12,
+		FColor::Blue,
+		false,
+		-1.0f,
+		0U,
+		0.0f,
+		FVector(1, 0, 0),
+		FVector(0, 1, 0),
+		false
+	);
+
+	DrawDebugPoint(Agent.GetWorld(), FVector(pointOnCircle, 0), 5, FColor::Red);
+
+	return steering;
+}
+
 FVector2D ISteeringBehavior::CalculatePredictedPosition(ASteeringAgent& Agent)
 {
 	FVector2D predictedPosition;
@@ -195,4 +225,3 @@ void ISteeringBehavior::DrawTarget(ASteeringAgent& Agent)
 {
 	DrawDebugPoint(Agent.GetWorld(), FVector(Target.Position, 0), 5, FColor::Red);
 }
-
