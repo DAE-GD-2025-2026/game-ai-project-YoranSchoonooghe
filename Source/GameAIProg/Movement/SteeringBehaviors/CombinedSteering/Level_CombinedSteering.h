@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <memory>
+
 #include "CoreMinimal.h"
 #include "CombinedSteeringBehaviors.h"
 #include "GameAIProg/Shared/Level_Base.h"
@@ -32,5 +34,6 @@ private:
 	bool UseMouseTarget = false;
 	bool CanDebugRender = false;
 
-	
+	ASteeringAgent* DrunkAgent = nullptr;
+	Seek* DrunkSeekBehavior = nullptr;
 };

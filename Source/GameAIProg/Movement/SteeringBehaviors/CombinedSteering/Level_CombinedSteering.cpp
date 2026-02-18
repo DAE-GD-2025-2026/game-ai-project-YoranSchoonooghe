@@ -15,6 +15,29 @@ void ALevel_CombinedSteering::BeginPlay()
 {
 	Super::BeginPlay();
 
+	// Spawn Drunk Agent
+	DrunkAgent = GetWorld()->SpawnActor<ASteeringAgent>(
+		SteeringAgentClass,
+		FVector{ 0,0,90 },
+		FRotator::ZeroRotator
+	);
+
+	if (!IsValid(DrunkAgent))
+		return;
+
+	// Create individual behaviors
+	DrunkSeekBehavior = new Seek();
+	Wander* pWander = new Wander();
+
+	// Create blended steering (50% Seek, 50% Wander)
+	std::vector<BlendedSteering::WeightedBehavior> weightedBehaviors;
+	weightedBehaviors.emplace_back(DrunkSeekBehavior, 0.5f);
+	weightedBehaviors.emplace_back(pWander, 0.5f);
+
+	BlendedSteering* pBlendedSteering = new BlendedSteering(weightedBehaviors);
+
+	// Assign behavior to agent
+	DrunkAgent->SetSteeringBehavior(pBlendedSteering);
 }
 
 void ALevel_CombinedSteering::BeginDestroy()
@@ -85,13 +108,13 @@ void ALevel_CombinedSteering::Tick(float DeltaTime)
 		ImGui::Spacing();
 
 
-		// ImGuiHelpers::ImGuiSliderFloatWithSetter("Seek",
-		// 	pBlendedSteering->GetWeightedBehaviorsRef()[0].Weight, 0.f, 1.f,
-		// 	[this](float InVal) { pBlendedSteering->GetWeightedBehaviorsRef()[0].Weight = InVal; }, "%.2f");
+		//ImGuiHelpers::ImGuiSliderFloatWithSetter("Seek",
+		//	pBlendedSteering->GetWeightedBehaviorsRef()[0].Weight, 0.f, 1.f,
+		//	[this](float InVal) { pBlendedSteering->GetWeightedBehaviorsRef()[0].Weight = InVal; }, "%.2f");
 		//
-		// ImGuiHelpers::ImGuiSliderFloatWithSetter("Wander",
-		// pBlendedSteering->GetWeightedBehaviorsRef()[1].Weight, 0.f, 1.f,
-		// [this](float InVal) { pBlendedSteering->GetWeightedBehaviorsRef()[1].Weight = InVal; }, "%.2f");
+		//ImGuiHelpers::ImGuiSliderFloatWithSetter("Wander",
+		//	pBlendedSteering->GetWeightedBehaviorsRef()[1].Weight, 0.f, 1.f,
+		//	[this](float InVal) { pBlendedSteering->GetWeightedBehaviorsRef()[1].Weight = InVal; }, "%.2f");
 	
 		//End
 		ImGui::End();
@@ -100,5 +123,10 @@ void ALevel_CombinedSteering::Tick(float DeltaTime)
 	
 	// Combined Steering Update
  // TODO: implement handling mouse click input for seek
+	if (!DrunkSeekBehavior)
+		return;
+
+	DrunkSeekBehavior->SetTarget(MouseTarget);
+
  // TODO: implement Make sure to also evade the wanderer
 }
