@@ -98,6 +98,8 @@ SteeringOutput Arrive::CalculateSteering(float DeltaT, ASteeringAgent& Agent)
 
 SteeringOutput Face::CalculateSteering(float DeltaT, ASteeringAgent& Agent)
 {
+	Agent.SetIsAutoOrienting(false);
+
 	SteeringOutput steering{};
 
 	FVector forward = Agent.GetActorForwardVector();
