@@ -17,6 +17,40 @@ Flock::Flock(
 	Agents.SetNum(FlockSize);
 
  // TODO: initialize the flock and the memory pool
+	pNeighbors.SetNum(FlockSize);
+
+	FActorSpawnParameters spawnParams;
+	spawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+
+	for (int i = 0; i < FlockSize; ++i)
+	{
+		FVector spawnPos = FVector(
+			FMath::RandRange(-WorldSize, WorldSize),
+			FMath::RandRange(-WorldSize, WorldSize),
+			90.f
+		);
+
+		Agents[i] = pWorld->SpawnActor<ASteeringAgent>(
+			AgentClass,
+			spawnPos,
+			FRotator::ZeroRotator,
+			spawnParams
+		);
+	}
+
+	std::vector<BlendedSteering::WeightedBehavior> weightedBehaviors;
+
+	pSeparationBehavior = std::make_unique<Separation>(this);
+	pCohesionBehavior = std::make_unique<Cohesion>(this);
+	pVelMatchBehavior = std::make_unique<VelocityMatch>(this);
+	pWanderBehavior = std::make_unique<Wander>();
+
+	weightedBehaviors.emplace_back(pSeparationBehavior.get(), 1.5f);
+	weightedBehaviors.emplace_back(pCohesionBehavior.get(), 1.0f);
+	weightedBehaviors.emplace_back(pVelMatchBehavior.get(), 1.0f);
+	weightedBehaviors.emplace_back(pWanderBehavior.get(), 0.3f);
+
+	pBlendedSteering = std::make_unique<BlendedSteering>(weightedBehaviors);
 }
 
 Flock::~Flock()
@@ -31,6 +65,16 @@ void Flock::Tick(float DeltaTime)
   // TODO: register the neighbors for this agent (-> fill the memory pool with the neighbors for the currently evaluated agent)
   // TODO: update the agent (-> the steeringbehaviors use the neighbors in the memory pool)
   // TODO: trim the agent to the world
+	for (int i = 0; i < FlockSize; ++i)
+	{
+		ASteeringAgent* pAgent = Agents[i];
+
+		RegisterNeighbors(pAgent);
+
+		Agents[i]->SetSteeringBehavior(pBlendedSteering.get());
+
+		pAgent->Tick(DeltaTime);
+	}
 }
 
 void Flock::RenderDebug()
@@ -82,7 +126,24 @@ void Flock::ImGuiRender(ImVec2 const& WindowPos, ImVec2 const& WindowSize)
 		ImGui::Spacing();
 
   // TODO: implement ImGUI sliders for steering behavior weights here
-		//End
+	
+		ImGuiHelpers::ImGuiSliderFloatWithSetter("Separation",
+			pBlendedSteering->GetWeightedBehaviorsRef()[0].Weight, 0.f, 1.f,
+			[this](float InVal) { pBlendedSteering->GetWeightedBehaviorsRef()[0].Weight = InVal; }, "%.2f");
+
+		ImGuiHelpers::ImGuiSliderFloatWithSetter("Cohesion",
+			pBlendedSteering->GetWeightedBehaviorsRef()[1].Weight, 0.f, 1.f,
+			[this](float InVal) { pBlendedSteering->GetWeightedBehaviorsRef()[1].Weight = InVal; }, "%.2f");
+
+		ImGuiHelpers::ImGuiSliderFloatWithSetter("Velocity Match",
+			pBlendedSteering->GetWeightedBehaviorsRef()[2].Weight, 0.f, 1.f,
+			[this](float InVal) { pBlendedSteering->GetWeightedBehaviorsRef()[2].Weight = InVal; }, "%.2f");
+		
+		ImGuiHelpers::ImGuiSliderFloatWithSetter("Wander",
+			pBlendedSteering->GetWeightedBehaviorsRef()[3].Weight, 0.f, 1.f,
+			[this](float InVal) { pBlendedSteering->GetWeightedBehaviorsRef()[3].Weight = InVal; }, "%.2f");
+
+  //End
 		ImGui::End();
 	}
 #pragma endregion
@@ -98,6 +159,27 @@ void Flock::RenderNeighborhood()
 void Flock::RegisterNeighbors(ASteeringAgent* const pAgent)
 {
  // TODO: Implement
+	NrOfNeighbors = 0;
+
+	const FVector2D agentPos = pAgent->GetPosition();
+
+	for (int i = 0; i < FlockSize; ++i)
+	{
+		ASteeringAgent* pOther = Agents[i];
+
+		if (pOther == pAgent) continue;
+
+		const float distance = FVector2D::Distance(
+			agentPos,
+			pOther->GetPosition()
+		);
+
+		if (distance <= NeighborhoodRadius)
+		{
+			pNeighbors[NrOfNeighbors] = pOther;
+			NrOfNeighbors++;
+		}
+	}
 }
 #endif
 
@@ -106,7 +188,18 @@ FVector2D Flock::GetAverageNeighborPos() const
 	FVector2D avgPosition = FVector2D::ZeroVector;
 
  // TODO: Implement
-	
+	if (NrOfNeighbors == 0)
+	{
+		return avgPosition;
+	}
+
+	for (int i = 0; i < NrOfNeighbors; ++i)
+	{
+		avgPosition += pNeighbors[i]->GetPosition();
+	}
+
+	avgPosition /= static_cast<float>(NrOfNeighbors);
+
 	return avgPosition;
 }
 
@@ -115,6 +208,18 @@ FVector2D Flock::GetAverageNeighborVelocity() const
 	FVector2D avgVelocity = FVector2D::ZeroVector;
 
  // TODO: Implement
+	if (NrOfNeighbors == 0)
+	{
+		return avgVelocity;
+	}
+
+	for (int i = 0; i < NrOfNeighbors; ++i)
+	{
+		FVector neighborVelocity = pNeighbors[i]->GetVelocity();
+		avgVelocity += FVector2D(neighborVelocity.X, neighborVelocity.Y);
+	}
+
+	avgVelocity /= static_cast<float>(NrOfNeighbors);
 
 	return avgVelocity;
 }
