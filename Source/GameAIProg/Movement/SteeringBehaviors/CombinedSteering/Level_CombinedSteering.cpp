@@ -15,35 +15,58 @@ void ALevel_CombinedSteering::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// Spawn Drunk Agent
-	DrunkAgent = GetWorld()->SpawnActor<ASteeringAgent>(
-		SteeringAgentClass,
-		FVector{ 0,0,90 },
-		FRotator::ZeroRotator
-	);
-
-	if (!IsValid(DrunkAgent))
-		return;
-
-	// Create individual behaviors
-	DrunkSeekBehavior = new Seek();
-	Wander* pWander = new Wander();
-
-	// Create blended steering (50% Seek, 50% Wander)
-	std::vector<BlendedSteering::WeightedBehavior> weightedBehaviors;
-	weightedBehaviors.emplace_back(DrunkSeekBehavior, 0.5f);
-	weightedBehaviors.emplace_back(pWander, 0.5f);
-
-	BlendedSteering* pBlendedSteering = new BlendedSteering(weightedBehaviors);
-
-	// Assign behavior to agent
-	DrunkAgent->SetSteeringBehavior(pBlendedSteering);
+	AddDrunkAgent();
+	AddEvadingAgent();
 }
 
 void ALevel_CombinedSteering::BeginDestroy()
 {
 	Super::BeginDestroy();
 
+}
+
+void ALevel_CombinedSteering::AddDrunkAgent()
+{
+	m_pDrunkAgent = GetWorld()->SpawnActor<ASteeringAgent>(
+		SteeringAgentClass,
+		FVector{ 0,0,90 },
+		FRotator::ZeroRotator
+	);
+
+	if (!IsValid(m_pDrunkAgent)) return;
+
+	m_pDrunkSeekBehavior = new Seek();
+	Wander* pWander = new Wander();
+
+	std::vector<BlendedSteering::WeightedBehavior> weightedBehaviors;
+	weightedBehaviors.emplace_back(m_pDrunkSeekBehavior, 0.5f);
+	weightedBehaviors.emplace_back(pWander, 0.5f);
+
+	m_pBlendedSteering = new BlendedSteering(weightedBehaviors);
+
+	m_pDrunkAgent->SetSteeringBehavior(m_pBlendedSteering);
+}
+
+void ALevel_CombinedSteering::AddEvadingAgent()
+{
+	m_pEvadingAgent = GetWorld()->SpawnActor<ASteeringAgent>(
+		SteeringAgentClass,
+		FVector{ 500,0,90 },
+		FRotator::ZeroRotator
+	);
+
+	if (!IsValid(m_pEvadingAgent)) return;
+
+	Wander* pWander = new Wander();
+	m_pEvadeBehavior = new Evade();
+
+	std::vector<ISteeringBehavior*> priorityBehaviors;
+	priorityBehaviors.emplace_back(m_pEvadeBehavior);
+	priorityBehaviors.emplace_back(pWander);
+
+	PrioritySteering* pPrioritySteering = new PrioritySteering(priorityBehaviors);
+
+	m_pEvadingAgent->SetSteeringBehavior(pPrioritySteering);
 }
 
 // Called every frame
@@ -107,14 +130,13 @@ void ALevel_CombinedSteering::Tick(float DeltaTime)
 		ImGui::Text("Behavior Weights");
 		ImGui::Spacing();
 
-
-		//ImGuiHelpers::ImGuiSliderFloatWithSetter("Seek",
-		//	pBlendedSteering->GetWeightedBehaviorsRef()[0].Weight, 0.f, 1.f,
-		//	[this](float InVal) { pBlendedSteering->GetWeightedBehaviorsRef()[0].Weight = InVal; }, "%.2f");
-		//
-		//ImGuiHelpers::ImGuiSliderFloatWithSetter("Wander",
-		//	pBlendedSteering->GetWeightedBehaviorsRef()[1].Weight, 0.f, 1.f,
-		//	[this](float InVal) { pBlendedSteering->GetWeightedBehaviorsRef()[1].Weight = InVal; }, "%.2f");
+		ImGuiHelpers::ImGuiSliderFloatWithSetter("Seek",
+			m_pBlendedSteering->GetWeightedBehaviorsRef()[0].Weight, 0.f, 1.f,
+			[this](float InVal) { m_pBlendedSteering->GetWeightedBehaviorsRef()[0].Weight = InVal; }, "%.2f");
+		
+		ImGuiHelpers::ImGuiSliderFloatWithSetter("Wander",
+			m_pBlendedSteering->GetWeightedBehaviorsRef()[1].Weight, 0.f, 1.f,
+			[this](float InVal) { m_pBlendedSteering->GetWeightedBehaviorsRef()[1].Weight = InVal; }, "%.2f");
 	
 		//End
 		ImGui::End();
@@ -123,10 +145,19 @@ void ALevel_CombinedSteering::Tick(float DeltaTime)
 	
 	// Combined Steering Update
  // TODO: implement handling mouse click input for seek
-	if (!DrunkSeekBehavior)
-		return;
+	if (!m_pDrunkSeekBehavior) return;
 
-	DrunkSeekBehavior->SetTarget(MouseTarget);
+	m_pDrunkSeekBehavior->SetTarget(MouseTarget);
 
  // TODO: implement Make sure to also evade the wanderer
+	if (m_pEvadeBehavior && m_pDrunkAgent)
+	{
+		FTargetData Target;
+		Target.Position = m_pDrunkAgent->GetPosition();
+		Target.Orientation = m_pDrunkAgent->GetRotation();
+		Target.LinearVelocity = m_pDrunkAgent->GetLinearVelocity();
+		Target.AngularVelocity = m_pDrunkAgent->GetAngularVelocity();
+
+		m_pEvadeBehavior->SetTarget(Target);
+	}
 }

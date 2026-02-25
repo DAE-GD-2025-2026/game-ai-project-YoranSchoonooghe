@@ -166,6 +166,10 @@ SteeringOutput Evade::CalculateSteering(float DeltaT, ASteeringAgent& Agent)
 	{
 		steering.LinearVelocity = Agent.GetPosition() - predictedPosition;
 	}
+	else
+	{
+		steering.IsValid = false;
+	}
 
 	DrawDebugPoint(Agent.GetWorld(), FVector(predictedPosition, 0), 5, FColor::Magenta);
 

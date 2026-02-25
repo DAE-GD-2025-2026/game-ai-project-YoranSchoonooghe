@@ -30,10 +30,16 @@ protected:
 	virtual void BeginDestroy() override;
 
 private:
+	void AddDrunkAgent();
+	void AddEvadingAgent();
+
 	//Datamembers
 	bool UseMouseTarget = false;
 	bool CanDebugRender = false;
 
-	ASteeringAgent* DrunkAgent = nullptr;
-	Seek* DrunkSeekBehavior = nullptr;
+	ASteeringAgent* m_pDrunkAgent = nullptr;
+	Seek* m_pDrunkSeekBehavior = nullptr;
+	BlendedSteering* m_pBlendedSteering = nullptr;
+	ASteeringAgent* m_pEvadingAgent = nullptr;
+	Evade* m_pEvadeBehavior = nullptr;
 };
