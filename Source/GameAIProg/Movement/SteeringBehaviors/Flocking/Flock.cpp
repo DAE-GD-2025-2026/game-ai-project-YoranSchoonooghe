@@ -51,6 +51,14 @@ Flock::Flock(
 	weightedBehaviors.emplace_back(pWanderBehavior.get(), 0.3f);
 
 	pBlendedSteering = std::make_unique<BlendedSteering>(weightedBehaviors);
+
+	pEvadeBehavior = std::make_unique<Evade>();
+
+	std::vector<ISteeringBehavior*> priorityBehaviors;
+
+	pPrioritySteering = std::make_unique<PrioritySteering>(priorityBehaviors);
+	pPrioritySteering->AddBehaviour(pEvadeBehavior.get());
+	pPrioritySteering->AddBehaviour(pBlendedSteering.get());
 }
 
 Flock::~Flock()
@@ -71,9 +79,20 @@ void Flock::Tick(float DeltaTime)
 
 		RegisterNeighbors(pAgent);
 
-		Agents[i]->SetSteeringBehavior(pBlendedSteering.get());
+		Agents[i]->SetSteeringBehavior(pPrioritySteering.get());
 
 		pAgent->Tick(DeltaTime);
+	}
+
+	if (pEvadeBehavior && pAgentToEvade)
+	{
+		FTargetData Target;
+		Target.Position = pAgentToEvade->GetPosition();
+		Target.Orientation = pAgentToEvade->GetRotation();
+		Target.LinearVelocity = pAgentToEvade->GetLinearVelocity();
+		Target.AngularVelocity = pAgentToEvade->GetAngularVelocity();
+
+		pEvadeBehavior->SetTarget(Target);
 	}
 }
 
