@@ -44,11 +44,13 @@ Flock::Flock(
 	pCohesionBehavior = std::make_unique<Cohesion>(this);
 	pVelMatchBehavior = std::make_unique<VelocityMatch>(this);
 	pWanderBehavior = std::make_unique<Wander>();
+	pSeekBehavior = std::make_unique<Seek>();
 
-	weightedBehaviors.emplace_back(pSeparationBehavior.get(), 1.5f);
+	weightedBehaviors.emplace_back(pSeparationBehavior.get(), 1.0f);
 	weightedBehaviors.emplace_back(pCohesionBehavior.get(), 1.0f);
 	weightedBehaviors.emplace_back(pVelMatchBehavior.get(), 1.0f);
 	weightedBehaviors.emplace_back(pWanderBehavior.get(), 0.3f);
+	weightedBehaviors.emplace_back(pSeekBehavior.get(), 0.7f);
 
 	pBlendedSteering = std::make_unique<BlendedSteering>(weightedBehaviors);
 
@@ -140,7 +142,14 @@ void Flock::ImGuiRender(ImVec2 const& WindowPos, ImVec2 const& WindowSize)
 		ImGui::Spacing();
 
   // TODO: implement ImGUI checkboxes for debug rendering here
-
+		if (ImGui::Checkbox("Debug Rendering", &DebugRenderSteering))
+		{
+			// TODO: Handle the debug rendering of your agents here :)
+			for (auto& agent : Agents)
+			{
+				agent->SetDebugRenderingEnabled(DebugRenderSteering);
+			}
+		}
 		ImGui::Text("Behavior Weights");
 		ImGui::Spacing();
 
@@ -161,6 +170,21 @@ void Flock::ImGuiRender(ImVec2 const& WindowPos, ImVec2 const& WindowSize)
 		ImGuiHelpers::ImGuiSliderFloatWithSetter("Wander",
 			pBlendedSteering->GetWeightedBehaviorsRef()[3].Weight, 0.f, 1.f,
 			[this](float InVal) { pBlendedSteering->GetWeightedBehaviorsRef()[3].Weight = InVal; }, "%.2f");
+		
+		ImGuiHelpers::ImGuiSliderFloatWithSetter("Seek",
+			pBlendedSteering->GetWeightedBehaviorsRef()[4].Weight, 0.f, 1.f,
+			[this](float InVal) { pBlendedSteering->GetWeightedBehaviorsRef()[4].Weight = InVal; }, "%.2f");
+
+		ImGui::Spacing();
+		ImGui::Separator();
+		ImGui::Spacing();
+
+		ImGui::Text("Agent to Evade");
+		ImGui::Spacing();
+		
+		float v = pAgentToEvade->GetMaxLinearSpeed();
+		if (ImGui::SliderFloat("Lin", &v, 0.f, 1000.f, "%.2f"))
+			pAgentToEvade->SetMaxLinearSpeed(v);
 
   //End
 		ImGui::End();
@@ -246,5 +270,6 @@ FVector2D Flock::GetAverageNeighborVelocity() const
 void Flock::SetTarget_Seek(FSteeringParams const& Target)
 {
  // TODO: Implement
+	pSeekBehavior->SetTarget(Target);
 }
 

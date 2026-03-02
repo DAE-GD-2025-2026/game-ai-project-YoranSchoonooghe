@@ -29,5 +29,5 @@ protected:
 	
 	UPROPERTY(EditAnywhere, Category = "Flocking")
 	ASteeringAgent* pAgentToEvade{nullptr}; // non owning ref
-	Seek* pSeek = nullptr;
+	std::unique_ptr<Wander> pWander{};
 };

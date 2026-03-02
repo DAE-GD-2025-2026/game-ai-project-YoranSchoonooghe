@@ -25,8 +25,9 @@ void ALevel_Flocking::BeginPlay()
 		FRotator::ZeroRotator
 	);
 
-	pSeek = new Seek();
-	pAgentToEvade->SetSteeringBehavior(pSeek);
+	pWander = std::make_unique<Wander>();
+	pWander->SetMaxAngleChange(5);
+	pAgentToEvade->SetSteeringBehavior(pWander.get());
 
 	pFlock = TUniquePtr<Flock>(
 		new Flock(
@@ -50,7 +51,6 @@ void ALevel_Flocking::Tick(float DeltaTime)
 	if (bUseMouseTarget)
 	{
 		pFlock->SetTarget_Seek(MouseTarget);
-		pSeek->SetTarget(MouseTarget);
 	}
 }
 
