@@ -81,6 +81,12 @@ void Flock::Tick(float DeltaTime)
 
 		RegisterNeighbors(pAgent);
 
+		if (i == 0)
+		{
+			pFirstAgentNeighbors = pNeighbors;
+			NrOfFirstAgentNeighbors = NrOfNeighbors;
+		}
+
 		Agents[i]->SetSteeringBehavior(pPrioritySteering.get());
 
 		pAgent->Tick(DeltaTime);
@@ -150,6 +156,12 @@ void Flock::ImGuiRender(ImVec2 const& WindowPos, ImVec2 const& WindowSize)
 				agent->SetDebugRenderingEnabled(DebugRenderSteering);
 			}
 		}
+		if (ImGui::Checkbox("Render Neighborhood", &DebugRenderNeighborhood))
+		{
+			RenderNeighborhood();
+		}
+
+
 		ImGui::Text("Behavior Weights");
 		ImGui::Spacing();
 
@@ -196,6 +208,33 @@ void Flock::ImGuiRender(ImVec2 const& WindowPos, ImVec2 const& WindowSize)
 void Flock::RenderNeighborhood()
 {
  // TODO: Debugrender the neighbors for the first agent in the flock
+	if (!DebugRenderNeighborhood) return;
+
+	const auto& firstAgent = Agents[0];
+
+	DrawDebugCircle(
+		firstAgent->GetWorld(),
+		FVector(firstAgent->GetPosition(), 0),
+		NeighborhoodRadius,
+		12,
+		FColor::Blue,
+		false,
+		-1.0f,
+		0U,
+		0.0f,
+		FVector(1, 0, 0),
+		FVector(0, 1, 0),
+		false
+	);
+
+	for (int i = 0; i < NrOfFirstAgentNeighbors; ++i)
+	{
+		const auto& pNeighbor = pFirstAgentNeighbors[i];
+		if (pNeighbor != nullptr && pNeighbor != firstAgent)
+		{
+			DrawDebugPoint(firstAgent->GetWorld(), FVector(pNeighbor->GetPosition(), 20), 10, FColor::Green);
+		}
+	}
 }
 
 #ifndef GAMEAI_USE_SPACE_PARTITIONING

@@ -30,6 +30,8 @@ public:
 	void RenderDebug();
 	void ImGuiRender(ImVec2 const& WindowPos, ImVec2 const& WindowSize);
 
+	void RenderNeighborhood();
+
 #ifdef GAMEAI_USE_SPACE_PARTITIONING
 	//const TArray<ASteeringAgent*>& GetNeighbors() const { return pPartitionedSpace->GetNeighbors(); }
 	//int GetNrOfNeighbors() const { return pPartitionedSpace->GetNrOfNeighbors(); }
@@ -61,6 +63,9 @@ private:
 	float NeighborhoodRadius{200.f};
 	int NrOfNeighbors{0};
 
+	TArray<ASteeringAgent*> pFirstAgentNeighbors{};
+	int NrOfFirstAgentNeighbors{ 0 };
+
 	ASteeringAgent* pAgentToEvade{nullptr};
 	
 	//Steering Behaviors
@@ -79,5 +84,5 @@ private:
 	bool DebugRenderNeighborhood{true};
 	bool DebugRenderPartitions{true};
 
-	void RenderNeighborhood();
+	//void RenderNeighborhood();
 };
