@@ -42,7 +42,12 @@ void ALevel_GraphTheory::BeginPlay()
 	}
 	
 	// TODO Make the graph and a couple connected nodes here...
-	
+	Renderer = GraphRenderer(GetWorld());
+
+	auto NodeId1 = Graph.AddNode(std::make_unique<Node>(FVector2D(0.f, 0.f)));
+	auto NodeId2 = Graph.AddNode(std::make_unique<Node>(FVector2D(100.f, 100.f)));
+	Graph.AddConnection(NodeId1, NodeId2);
+
 	// Spawn the Agent
 	Agent = GetWorld()->SpawnActor<ASteeringAgent>(SteeringAgentClass, 
 	FVector{0,0,90}, FRotator::ZeroRotator);
