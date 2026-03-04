@@ -81,7 +81,8 @@ void CellSpace::UpdateAgentCell(ASteeringAgent& Agent, const FVector2D& OldPos)
 
 	if (oldIndex != newIndex)
 	{
-
+		Cells[oldIndex].Agents.remove(&Agent);
+		Cells[newIndex].Agents.push_back(&Agent);
 	}
 }
 
@@ -89,6 +90,41 @@ void CellSpace::RegisterNeighbors(ASteeringAgent& Agent, float QueryRadius)
 {
 	// TODO Register the neighbors for the provided agent
 	// TODO Only check the cells that are within the radius of the neighborhood
+
+	NrOfNeighbors = 0;
+
+	const FVector2D agentPos = Agent.GetPosition();
+
+	FRect neighborRect;
+	neighborRect.Min = FVector2D(
+		agentPos.X - QueryRadius,
+		agentPos.Y - QueryRadius
+	);
+	neighborRect.Max = FVector2D(
+		agentPos.X + QueryRadius,
+		agentPos.Y + QueryRadius
+	);
+
+	for (const auto& cell : Cells)
+	{
+		if (!DoRectsOverlap(neighborRect, cell.BoundingBox)) continue;
+
+		for (const auto& pAgent : cell.Agents)
+		{
+			if (pAgent == &Agent) continue;
+
+			const float distance = FVector2D::Distance(
+				agentPos,
+				pAgent->GetPosition()
+			);
+			
+			if (distance <= QueryRadius)
+			{
+				Neighbors[NrOfNeighbors] = pAgent;
+				NrOfNeighbors++;
+			}
+		}
+	}
 }
 
 void CellSpace::EmptyCells()

@@ -18,7 +18,9 @@ Flock::Flock(
 	Agents.SetNum(FlockSize);
 
  // TODO: initialize the flock and the memory pool
+#ifndef GAMEAI_USE_SPACE_PARTITIONING
 	pNeighbors.SetNum(FlockSize);
+#endif
 
 	// CellSpace
 	const int rows = 10;
@@ -97,13 +99,25 @@ void Flock::Tick(float DeltaTime)
 	{
 		ASteeringAgent* pAgent = Agents[i];
 
-		RegisterNeighbors(pAgent);
+#ifdef GAMEAI_USE_SPACE_PARTITIONING
+		
+		pCellSpace->RegisterNeighbors(*pAgent, NeighborhoodRadius);
 
 		if (i == 0)
 		{
-			pFirstAgentNeighbors = pNeighbors;
-			NrOfFirstAgentNeighbors = NrOfNeighbors;
+			pFirstAgentNeighbors = pCellSpace->GetNeighbors();
+			NrOfFirstAgentNeighbors = pCellSpace->GetNrOfNeighbors();
 		}
+#else
+		RegisterNeighbors(pAgent);
+		
+		if (i == 0)
+		{
+			pFirstAgentNeighbors = GetNeighbors();
+			NrOfFirstAgentNeighbors = GetNrOfNeighbors();
+		}
+#endif
+
 
 		Agents[i]->SetSteeringBehavior(pPrioritySteering.get());
 
@@ -308,17 +322,17 @@ FVector2D Flock::GetAverageNeighborPos() const
 	FVector2D avgPosition = FVector2D::ZeroVector;
 
  // TODO: Implement
-	if (NrOfNeighbors == 0)
+	if (GetNrOfNeighbors() == 0)
 	{
 		return avgPosition;
 	}
 
-	for (int i = 0; i < NrOfNeighbors; ++i)
+	for (int i = 0; i < GetNrOfNeighbors(); ++i)
 	{
-		avgPosition += pNeighbors[i]->GetPosition();
+		avgPosition += GetNeighbors()[i]->GetPosition();
 	}
 
-	avgPosition /= static_cast<float>(NrOfNeighbors);
+	avgPosition /= static_cast<float>(GetNrOfNeighbors());
 
 	return avgPosition;
 }
@@ -328,18 +342,18 @@ FVector2D Flock::GetAverageNeighborVelocity() const
 	FVector2D avgVelocity = FVector2D::ZeroVector;
 
  // TODO: Implement
-	if (NrOfNeighbors == 0)
+	if (GetNrOfNeighbors() == 0)
 	{
 		return avgVelocity;
 	}
 
-	for (int i = 0; i < NrOfNeighbors; ++i)
+	for (int i = 0; i < GetNrOfNeighbors(); ++i)
 	{
-		FVector neighborVelocity = pNeighbors[i]->GetVelocity();
+		FVector neighborVelocity = GetNeighbors()[i]->GetVelocity();
 		avgVelocity += FVector2D(neighborVelocity.X, neighborVelocity.Y);
 	}
 
-	avgVelocity /= static_cast<float>(NrOfNeighbors);
+	avgVelocity /= static_cast<float>(GetNrOfNeighbors());
 
 	return avgVelocity;
 }

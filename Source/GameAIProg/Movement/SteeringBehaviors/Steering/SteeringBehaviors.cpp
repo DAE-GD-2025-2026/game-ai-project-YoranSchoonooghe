@@ -49,7 +49,6 @@ SteeringOutput Arrive::CalculateSteering(float DeltaT, ASteeringAgent& Agent)
 	steering.LinearVelocity = Target.Position - Agent.GetPosition();
 	
 	const float SLOW_RADIUS{ 500.f };
-	const float TARGET_RADIUS{ 100.f };
 	float distanceToTarget{};
 	
 	distanceToTarget = (Target.Position - Agent.GetPosition()).Length();
@@ -58,13 +57,13 @@ SteeringOutput Arrive::CalculateSteering(float DeltaT, ASteeringAgent& Agent)
 	{
 		Agent.SetMaxLinearSpeed(Agent.GetOriginalMaxSpeed());
 	}
-	else if (distanceToTarget < TARGET_RADIUS)
+	else if (distanceToTarget < m_TargetRadius)
 	{
 		Agent.SetMaxLinearSpeed(0);
 	}
 	else
 	{
-		Agent.SetMaxLinearSpeed((distanceToTarget - TARGET_RADIUS) / (SLOW_RADIUS - TARGET_RADIUS) * Agent.GetOriginalMaxSpeed());
+		Agent.SetMaxLinearSpeed((distanceToTarget - m_TargetRadius) / (SLOW_RADIUS - m_TargetRadius) * Agent.GetOriginalMaxSpeed());
 	}
 	
 	if (Agent.GetDebugRenderingEnabled())
@@ -72,7 +71,7 @@ SteeringOutput Arrive::CalculateSteering(float DeltaT, ASteeringAgent& Agent)
 		DrawDebugCircle(
 			Agent.GetWorld(),
 			FVector3d(Agent.GetPosition().X, Agent.GetPosition().Y, 0),
-			TARGET_RADIUS,
+			m_TargetRadius,
 			12,
 			FColor::Orange,
 			false,
