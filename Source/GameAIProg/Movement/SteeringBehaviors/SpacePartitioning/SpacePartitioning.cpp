@@ -51,9 +51,12 @@ CellSpace::CellSpace(UWorld* pWorld, float Width, float Height, int Rows, int Co
 		{
 			int index = row * Cols + col;
 
+			const float widthOffset = -Width / 2;
+			const float heightOffset = -Height / 2;
+
 			Cells.emplace_back(
-				col * CellWidth,
-				row * CellHeight,
+				col * CellWidth + widthOffset,
+				row * CellHeight + heightOffset,
 				CellWidth,
 				CellHeight
 			);

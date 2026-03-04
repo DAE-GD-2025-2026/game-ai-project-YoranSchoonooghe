@@ -26,8 +26,8 @@ Flock::Flock(
 
 	pCellSpace = new CellSpace(
 		pWorld,
-		WorldSize,
-		WorldSize,
+		2 * WorldSize,
+		2 * WorldSize,
 		rows,
 		cols,
 		FlockSize
