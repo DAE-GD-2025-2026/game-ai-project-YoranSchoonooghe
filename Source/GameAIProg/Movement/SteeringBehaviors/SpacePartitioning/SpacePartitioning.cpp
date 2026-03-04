@@ -43,17 +43,43 @@ CellSpace::CellSpace(UWorld* pWorld, float Width, float Height, int Rows, int Co
 	CellHeight = Height / Rows;
 
 	// TODO create the cells
+	Cells.reserve(Rows * Cols);
+
+	for (int row = 0; row < Rows; ++row)
+	{
+		for (int col = 0; col < Cols; ++col)
+		{
+			int index = row * Cols + col;
+
+			Cells.emplace_back(
+				col * CellWidth,
+				row * CellHeight,
+				CellWidth,
+				CellHeight
+			);
+		}
+	}
 }
 
 void CellSpace::AddAgent(ASteeringAgent& Agent)
 {
 	// TODO Add the agent to the correct cell
+	int cellIndex = PositionToIndex(Agent.GetPosition());
+
+	Cells[cellIndex].Agents.push_back(&Agent);
 }
 
 void CellSpace::UpdateAgentCell(ASteeringAgent& Agent, const FVector2D& OldPos)
 {
 	//TODO Check if the agent needs to be moved to another cell.
 	//TODO Use the calculated index for oldPos and currentPos for this
+	int oldIndex = PositionToIndex(OldPos);
+	int newIndex = PositionToIndex(Agent.GetPosition());
+
+	if (oldIndex != newIndex)
+	{
+
+	}
 }
 
 void CellSpace::RegisterNeighbors(ASteeringAgent& Agent, float QueryRadius)
@@ -71,12 +97,39 @@ void CellSpace::EmptyCells()
 void CellSpace::RenderCells() const
 {
 	// TODO Render the cells with the number of agents inside of it
+	for (int index = 0; index < Cells.size(); ++index)
+	{
+		const auto& cell = Cells[index];
+
+		const float CENTER_X = cell.BoundingBox.Min.X + CellWidth / 2;
+		const float CENTER_Y = cell.BoundingBox.Min.Y + CellHeight / 2;
+
+		DrawDebugBox(
+			pWorld,
+			FVector(CENTER_X, CENTER_Y, 20.f),
+			FVector(CellWidth / 2, CellHeight / 2, 0.f),
+			FColor::Blue
+		);
+
+	}
 }
 
 int CellSpace::PositionToIndex(FVector2D const & Pos) const
 {
 	// TODO Calculate the index of the cell based on the position
-	return 0;
+	for (int index = 0; index < Cells.size(); ++index)
+	{
+		const auto& cell = Cells[index];
+
+		if (Pos.X < cell.BoundingBox.Min.X || Pos.X > cell.BoundingBox.Max.X)
+			continue;
+		if (Pos.Y < cell.BoundingBox.Min.Y || Pos.Y > cell.BoundingBox.Max.Y)
+			continue;
+
+		return index;
+	}
+
+	return -1;
 }
 
 bool CellSpace::DoRectsOverlap(FRect const & RectA, FRect const & RectB)

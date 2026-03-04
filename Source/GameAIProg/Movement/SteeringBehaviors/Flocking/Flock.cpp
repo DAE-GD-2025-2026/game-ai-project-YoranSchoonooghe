@@ -1,6 +1,7 @@
 #include "Flock.h"
 #include "FlockingSteeringBehaviors.h"
 #include "Shared/ImGuiHelpers.h"
+#include "../SpacePartitioning/SpacePartitioning.h"
 
 
 Flock::Flock(
@@ -19,6 +20,19 @@ Flock::Flock(
  // TODO: initialize the flock and the memory pool
 	pNeighbors.SetNum(FlockSize);
 
+	// CellSpace
+	const int rows = 10;
+	const int cols = 10;
+
+	pCellSpace = new CellSpace(
+		pWorld,
+		WorldSize,
+		WorldSize,
+		rows,
+		cols,
+		FlockSize
+	);
+
 	FActorSpawnParameters spawnParams;
 	spawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
 
@@ -36,6 +50,8 @@ Flock::Flock(
 			FRotator::ZeroRotator,
 			spawnParams
 		);
+
+		//pCellSpace->AddAgent(*Agents[i]);
 	}
 
 	std::vector<BlendedSteering::WeightedBehavior> weightedBehaviors;
@@ -66,6 +82,8 @@ Flock::Flock(
 Flock::~Flock()
 {
  // TODO: Cleanup any additional data
+	delete pCellSpace;
+	pCellSpace = nullptr;
 }
 
 void Flock::Tick(float DeltaTime)
@@ -107,6 +125,7 @@ void Flock::Tick(float DeltaTime)
 void Flock::RenderDebug()
 {
  // TODO: Render all the agents in the flock
+	pCellSpace->RenderCells();
 }
 
 void Flock::ImGuiRender(ImVec2 const& WindowPos, ImVec2 const& WindowSize)
@@ -147,20 +166,21 @@ void Flock::ImGuiRender(ImVec2 const& WindowPos, ImVec2 const& WindowSize)
 		ImGui::Text("Flocking");
 		ImGui::Spacing();
 
+		if (ImGui::Checkbox("Spatial Partitioning", &UseSpatialPartitioning))
+		{
+
+		}
+
   // TODO: implement ImGUI checkboxes for debug rendering here
 		if (ImGui::Checkbox("Debug Rendering", &DebugRenderSteering))
 		{
-			// TODO: Handle the debug rendering of your agents here :)
 			for (auto& agent : Agents)
 			{
 				agent->SetDebugRenderingEnabled(DebugRenderSteering);
 			}
 		}
-		if (ImGui::Checkbox("Render Neighborhood", &DebugRenderNeighborhood))
-		{
-			RenderNeighborhood();
-		}
-
+		
+		ImGui::Checkbox("Render Neighborhood", &DebugRenderNeighborhood);
 
 		ImGui::Text("Behavior Weights");
 		ImGui::Spacing();
@@ -235,6 +255,24 @@ void Flock::RenderNeighborhood()
 			DrawDebugPoint(firstAgent->GetWorld(), FVector(pNeighbor->GetPosition(), 20), 10, FColor::Green);
 		}
 	}
+}
+
+int Flock::GetNrOfNeighbors() const
+{
+#ifdef GAMEAI_USE_SPACE_PARTITIONING
+	return pPartitionedSpace->GetNrOfNeighbors();
+#else
+	return NrOfNeighbors;
+#endif
+}
+
+const TArray<ASteeringAgent*>& Flock::GetNeighbors() const
+{
+#ifdef GAMEAI_USE_SPACE_PARTITIONING
+	return pPartitionedSpace->GetNeighbors();;
+#else
+	return pNeighbors;
+#endif
 }
 
 #ifndef GAMEAI_USE_SPACE_PARTITIONING
