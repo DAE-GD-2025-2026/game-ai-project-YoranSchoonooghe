@@ -131,7 +131,7 @@ void Flock::RenderDebug()
 #ifdef GAMEAI_USE_SPACE_PARTITIONING
 	if (DebugRenderPartitions)
 	{
-		pPartitionedSpace->RenderCells();
+		pPartitionedSpace->RenderCells(DebugRenderCellCount);
 	}
 #endif
 
@@ -189,6 +189,8 @@ void Flock::ImGuiRender(ImVec2 const& WindowPos, ImVec2 const& WindowSize)
 
 #ifdef GAMEAI_USE_SPACE_PARTITIONING
 		ImGui::Checkbox("Render Cell Space", &DebugRenderPartitions);
+		ImGui::Checkbox("Show Cell Count", &DebugRenderCellCount);
+		ImGui::Checkbox("Show Agent Overlapping Cells", &DebugRenderOverlappingCells);
 #endif
 
 		ImGui::Text("Behavior Weights");
@@ -269,6 +271,11 @@ void Flock::RenderNeighborhood()
 		FVector(NeighborhoodRadius, NeighborhoodRadius, 0.f),
 		FColor::Blue
 	);
+
+	if (DebugRenderOverlappingCells)
+	{
+		pPartitionedSpace->RenderOverlappingCells(*firstAgent, NeighborhoodRadius);
+	}
 #endif
 
 	for (int i = 0; i < NrOfFirstAgentNeighbors; ++i)

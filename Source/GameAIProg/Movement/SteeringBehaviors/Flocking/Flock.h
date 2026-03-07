@@ -1,7 +1,7 @@
 ﻿#pragma once
 
 // Toggle this define to enable/disable spatial partitioning
-#define GAMEAI_USE_SPACE_PARTITIONING
+//#define GAMEAI_USE_SPACE_PARTITIONING
 
 #include "FlockingSteeringBehaviors.h"
 #include "Movement/SteeringBehaviors/SteeringAgent.h"
@@ -87,7 +87,9 @@ private:
 	bool DebugRenderSteering{false};
 	bool DebugRenderEvadeSteering{ true };
 	bool DebugRenderNeighborhood{true};
+	bool DebugRenderOverlappingCells{ true };
 	bool DebugRenderPartitions{true};
+	bool DebugRenderCellCount{ true };
 
 	CellSpace* pCellSpace{};
 };

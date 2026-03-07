@@ -43,7 +43,8 @@ public:
 
 	//empties the cells of entities
 	void EmptyCells();
-	void RenderCells()const;
+	void RenderCells(bool showCount = true)const;
+	void RenderOverlappingCells(const ASteeringAgent& Agent, float QueryRadius) const;
 
 private:
 	// For debug draw purposes
@@ -68,5 +69,5 @@ private:
 
 	// Helper functions
 	int PositionToIndex(FVector2D const & Pos) const;
-	bool DoRectsOverlap(FRect const& RectA, FRect const& RectB);
+	bool DoRectsOverlap(FRect const& RectA, FRect const& RectB) const;
 };

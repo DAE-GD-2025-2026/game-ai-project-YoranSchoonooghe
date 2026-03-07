@@ -145,7 +145,7 @@ void CellSpace::EmptyCells()
 		c.Agents.clear();
 }
 
-void CellSpace::RenderCells() const
+void CellSpace::RenderCells(bool showCount) const
 {
 	// TODO Render the cells with the number of agents inside of it
 	for (int index = 0; index < Cells.size(); ++index)
@@ -162,18 +162,52 @@ void CellSpace::RenderCells() const
 			FColor::Blue
 		);
 		
-		FString AgentCountText = FString::Printf(TEXT("%lld"), (int64)cell.Agents.size());
+		if (showCount)
+		{
+			FString AgentCountText = FString::Printf(TEXT("%lld"), (int64)cell.Agents.size());
 
-		DrawDebugString(
-			pWorld,
-			FVector(CENTER_X, CENTER_Y, 20.f),
-			AgentCountText,
-			nullptr,
-			FColor::Red,
-			0.01f,
-			false,
-			1.5f
-		);
+			DrawDebugString(
+				pWorld,
+				FVector(CENTER_X, CENTER_Y, 20.f),
+				AgentCountText,
+				nullptr,
+				FColor::Red,
+				0.01f,
+				false,
+				1.5f
+			);
+		}
+	}
+}
+
+void CellSpace::RenderOverlappingCells(const ASteeringAgent& Agent, float QueryRadius) const
+{
+	const FVector2D agentPos = Agent.GetPosition();
+
+	FRect neighborRect;
+	neighborRect.Min = FVector2D(
+		agentPos.X - QueryRadius,
+		agentPos.Y - QueryRadius
+	);
+	neighborRect.Max = FVector2D(
+		agentPos.X + QueryRadius,
+		agentPos.Y + QueryRadius
+	);
+
+	for (const auto& cell : Cells)
+	{
+		if (DoRectsOverlap(neighborRect, cell.BoundingBox))
+		{
+			const float CENTER_X = cell.BoundingBox.Min.X + CellWidth / 2;
+			const float CENTER_Y = cell.BoundingBox.Min.Y + CellHeight / 2;
+
+			DrawDebugSolidBox(
+				pWorld,
+				FVector(CENTER_X, CENTER_Y, 1.f),
+				FVector(CellWidth / 2, CellHeight / 2, 0.f),
+				FColor::Emerald
+			);
+		}
 	}
 }
 
@@ -195,7 +229,7 @@ int CellSpace::PositionToIndex(FVector2D const & Pos) const
 	return -1;
 }
 
-bool CellSpace::DoRectsOverlap(FRect const & RectA, FRect const & RectB)
+bool CellSpace::DoRectsOverlap(FRect const & RectA, FRect const & RectB) const
 {
 	// Check if the rectangles are separated on either axis
 	if (RectA.Max.X < RectB.Min.X || RectA.Min.X > RectB.Max.X) return false;

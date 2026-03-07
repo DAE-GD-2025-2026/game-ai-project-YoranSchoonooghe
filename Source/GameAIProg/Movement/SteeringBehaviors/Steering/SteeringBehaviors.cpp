@@ -162,7 +162,10 @@ SteeringOutput Evade::CalculateSteering(float DeltaT, ASteeringAgent& Agent)
 
 	const float EVADE_RADIUS{ 300.f };
 
-	if ((predictedPosition - Agent.GetPosition()).Length() < EVADE_RADIUS)
+	const float DISTANCE_TO_CURRENT_SQR = (Target.Position - Agent.GetPosition()).SquaredLength();
+	const float DISTANCE_TO_PREDICTED_SQR = (predictedPosition - Agent.GetPosition()).SquaredLength();
+
+	if (DISTANCE_TO_CURRENT_SQR < (EVADE_RADIUS * EVADE_RADIUS) || DISTANCE_TO_PREDICTED_SQR < (EVADE_RADIUS * EVADE_RADIUS))
 	{
 		steering.LinearVelocity = Agent.GetPosition() - predictedPosition;
 	}
