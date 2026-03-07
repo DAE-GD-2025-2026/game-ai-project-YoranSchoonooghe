@@ -32,3 +32,7 @@ This behavior should overrule any of the other behaviors, and therefore it is no
 
 ### Spatial Partitioning
 Every update, each agent checks if every other agent in the flock is close enough to become one of its neighbors. This is a rather expensive task, with a complexity of $$O(n^2)$$. Spatial Partitioning improves this operation by dividing the world space in a number of cells. Instead of checking all agents, each agent checks which cells in the cell space overlap with the agents' neighborhood. For every cell that overlaps, the agent checks which agents in the cell are close enough to become a neighbor.
+
+<p align="center">
+  <img src="Resources/SpacePartitioning.gif" width="400"/>
+</p>
