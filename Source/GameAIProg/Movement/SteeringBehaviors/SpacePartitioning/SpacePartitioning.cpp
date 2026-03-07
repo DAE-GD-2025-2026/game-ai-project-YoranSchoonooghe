@@ -1,4 +1,5 @@
 #include "SpacePartitioning.h"
+#include <string>
 
 // --- Cell ---
 // ------------
@@ -69,6 +70,8 @@ void CellSpace::AddAgent(ASteeringAgent& Agent)
 	// TODO Add the agent to the correct cell
 	int cellIndex = PositionToIndex(Agent.GetPosition());
 
+	if (cellIndex == -1) return;
+
 	Cells[cellIndex].Agents.push_back(&Agent);
 }
 
@@ -76,13 +79,22 @@ void CellSpace::UpdateAgentCell(ASteeringAgent& Agent, const FVector2D& OldPos)
 {
 	//TODO Check if the agent needs to be moved to another cell.
 	//TODO Use the calculated index for oldPos and currentPos for this
+	FVector2D newPos = Agent.GetPosition();
+
 	int oldIndex = PositionToIndex(OldPos);
-	int newIndex = PositionToIndex(Agent.GetPosition());
+	int newIndex = PositionToIndex(newPos);
 
 	if (oldIndex != newIndex)
 	{
-		Cells[oldIndex].Agents.remove(&Agent);
-		Cells[newIndex].Agents.push_back(&Agent);
+		if (oldIndex != -1)
+		{
+			Cells[oldIndex].Agents.remove(&Agent);
+		}
+
+		if (newIndex != -1)
+		{
+			Cells[newIndex].Agents.push_back(&Agent);
+		}
 	}
 }
 
@@ -149,7 +161,19 @@ void CellSpace::RenderCells() const
 			FVector(CellWidth / 2, CellHeight / 2, 0.f),
 			FColor::Blue
 		);
+		
+		FString AgentCountText = FString::Printf(TEXT("%lld"), (int64)cell.Agents.size());
 
+		DrawDebugString(
+			pWorld,
+			FVector(CENTER_X, CENTER_Y, 20.f),
+			AgentCountText,
+			nullptr,
+			FColor::Red,
+			0.01f,
+			false,
+			1.5f
+		);
 	}
 }
 

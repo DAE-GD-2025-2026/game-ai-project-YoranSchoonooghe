@@ -18,22 +18,22 @@ Flock::Flock(
 	Agents.SetNum(FlockSize);
 
  // TODO: initialize the flock and the memory pool
-#ifndef GAMEAI_USE_SPACE_PARTITIONING
-	pNeighbors.SetNum(FlockSize);
-#endif
-
-	// CellSpace
-	const int rows = 10;
-	const int cols = 10;
-
-	pCellSpace = new CellSpace(
+#ifdef GAMEAI_USE_SPACE_PARTITIONING
+	pPartitionedSpace = std::make_unique<CellSpace>(
 		pWorld,
 		2 * WorldSize,
 		2 * WorldSize,
-		rows,
-		cols,
+		NrOfCellsX,
+		NrOfCellsX,
 		FlockSize
 	);
+
+	OldPositions.SetNum(FlockSize);
+
+#else
+	pNeighbors.SetNum(FlockSize);
+
+#endif
 
 	FActorSpawnParameters spawnParams;
 	spawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
@@ -53,32 +53,15 @@ Flock::Flock(
 			spawnParams
 		);
 
-		//pCellSpace->AddAgent(*Agents[i]);
+		Agents[i]->SetDebugRenderingEnabled(false);
+
+#ifdef GAMEAI_USE_SPACE_PARTITIONING
+		pPartitionedSpace->AddAgent(*Agents[i]);
+		OldPositions[i] = Agents[i]->GetPosition();
+#endif
 	}
 
-	std::vector<BlendedSteering::WeightedBehavior> weightedBehaviors;
-
-	pSeparationBehavior = std::make_unique<Separation>(this);
-	pCohesionBehavior = std::make_unique<Cohesion>(this);
-	pVelMatchBehavior = std::make_unique<VelocityMatch>(this);
-	pWanderBehavior = std::make_unique<Wander>();
-	pSeekBehavior = std::make_unique<Seek>();
-
-	weightedBehaviors.emplace_back(pSeparationBehavior.get(), 1.0f);
-	weightedBehaviors.emplace_back(pCohesionBehavior.get(), 1.0f);
-	weightedBehaviors.emplace_back(pVelMatchBehavior.get(), 1.0f);
-	weightedBehaviors.emplace_back(pWanderBehavior.get(), 0.3f);
-	weightedBehaviors.emplace_back(pSeekBehavior.get(), 0.7f);
-
-	pBlendedSteering = std::make_unique<BlendedSteering>(weightedBehaviors);
-
-	pEvadeBehavior = std::make_unique<Evade>();
-
-	std::vector<ISteeringBehavior*> priorityBehaviors;
-
-	pPrioritySteering = std::make_unique<PrioritySteering>(priorityBehaviors);
-	pPrioritySteering->AddBehaviour(pEvadeBehavior.get());
-	pPrioritySteering->AddBehaviour(pBlendedSteering.get());
+	InitializeSteering();
 }
 
 Flock::~Flock()
@@ -101,12 +84,15 @@ void Flock::Tick(float DeltaTime)
 
 #ifdef GAMEAI_USE_SPACE_PARTITIONING
 		
-		pCellSpace->RegisterNeighbors(*pAgent, NeighborhoodRadius);
+		pPartitionedSpace->RegisterNeighbors(*pAgent, NeighborhoodRadius);
+		
+		pPartitionedSpace->UpdateAgentCell(*pAgent, OldPositions[i]);
+		OldPositions[i] = pAgent->GetPosition();
 
 		if (i == 0)
 		{
-			pFirstAgentNeighbors = pCellSpace->GetNeighbors();
-			NrOfFirstAgentNeighbors = pCellSpace->GetNrOfNeighbors();
+			pFirstAgentNeighbors = pPartitionedSpace->GetNeighbors();
+			NrOfFirstAgentNeighbors = pPartitionedSpace->GetNrOfNeighbors();
 		}
 #else
 		RegisterNeighbors(pAgent);
@@ -139,7 +125,20 @@ void Flock::Tick(float DeltaTime)
 void Flock::RenderDebug()
 {
  // TODO: Render all the agents in the flock
-	pCellSpace->RenderCells();
+
+	DrawDebugPoint(pWorld, FVector(pAgentToEvade->GetPosition(), 20), 10, FColor::Cyan);
+
+#ifdef GAMEAI_USE_SPACE_PARTITIONING
+	if (DebugRenderPartitions)
+	{
+		pPartitionedSpace->RenderCells();
+	}
+#endif
+
+	if (DebugRenderNeighborhood)
+	{
+		RenderNeighborhood();
+	}
 }
 
 void Flock::ImGuiRender(ImVec2 const& WindowPos, ImVec2 const& WindowSize)
@@ -180,21 +179,17 @@ void Flock::ImGuiRender(ImVec2 const& WindowPos, ImVec2 const& WindowSize)
 		ImGui::Text("Flocking");
 		ImGui::Spacing();
 
-		if (ImGui::Checkbox("Spatial Partitioning", &UseSpatialPartitioning))
-		{
-
-		}
-
   // TODO: implement ImGUI checkboxes for debug rendering here
-		if (ImGui::Checkbox("Debug Rendering", &DebugRenderSteering))
+		if (ImGui::Checkbox("Render Agent Steering", &DebugRenderSteering))
 		{
-			for (auto& agent : Agents)
-			{
-				agent->SetDebugRenderingEnabled(DebugRenderSteering);
-			}
+			Agents[0]->SetDebugRenderingEnabled(DebugRenderSteering);
 		}
 		
-		ImGui::Checkbox("Render Neighborhood", &DebugRenderNeighborhood);
+		ImGui::Checkbox("Render Agent Neighborhood", &DebugRenderNeighborhood);
+
+#ifdef GAMEAI_USE_SPACE_PARTITIONING
+		ImGui::Checkbox("Render Cell Space", &DebugRenderPartitions);
+#endif
 
 		ImGui::Text("Behavior Weights");
 		ImGui::Spacing();
@@ -228,6 +223,11 @@ void Flock::ImGuiRender(ImVec2 const& WindowPos, ImVec2 const& WindowSize)
 		ImGui::Text("Agent to Evade");
 		ImGui::Spacing();
 		
+		if (ImGui::Checkbox("Render Steering", &DebugRenderEvadeSteering))
+		{
+			pAgentToEvade->SetDebugRenderingEnabled(DebugRenderEvadeSteering);
+		}
+
 		float v = pAgentToEvade->GetMaxLinearSpeed();
 		if (ImGui::SliderFloat("Lin", &v, 0.f, 1000.f, "%.2f"))
 			pAgentToEvade->SetMaxLinearSpeed(v);
@@ -242,13 +242,14 @@ void Flock::ImGuiRender(ImVec2 const& WindowPos, ImVec2 const& WindowSize)
 void Flock::RenderNeighborhood()
 {
  // TODO: Debugrender the neighbors for the first agent in the flock
-	if (!DebugRenderNeighborhood) return;
-
 	const auto& firstAgent = Agents[0];
+	const auto& firstAgentPos = firstAgent->GetPosition();
+
+	DrawDebugPoint(pWorld, FVector(firstAgent->GetPosition(), 20), 10, FColor::Yellow);
 
 	DrawDebugCircle(
-		firstAgent->GetWorld(),
-		FVector(firstAgent->GetPosition(), 0),
+		pWorld,
+		FVector(firstAgent->GetPosition(), 20),
 		NeighborhoodRadius,
 		12,
 		FColor::Blue,
@@ -261,12 +262,21 @@ void Flock::RenderNeighborhood()
 		false
 	);
 
+#ifdef GAMEAI_USE_SPACE_PARTITIONING
+	DrawDebugBox(
+		pWorld,
+		FVector(firstAgentPos.X, firstAgentPos.Y, 20.f),
+		FVector(NeighborhoodRadius, NeighborhoodRadius, 0.f),
+		FColor::Blue
+	);
+#endif
+
 	for (int i = 0; i < NrOfFirstAgentNeighbors; ++i)
 	{
 		const auto& pNeighbor = pFirstAgentNeighbors[i];
 		if (pNeighbor != nullptr && pNeighbor != firstAgent)
 		{
-			DrawDebugPoint(firstAgent->GetWorld(), FVector(pNeighbor->GetPosition(), 20), 10, FColor::Green);
+			DrawDebugPoint(pWorld, FVector(pNeighbor->GetPosition(), 20), 10, FColor::Green);
 		}
 	}
 }
@@ -362,5 +372,32 @@ void Flock::SetTarget_Seek(FSteeringParams const& Target)
 {
  // TODO: Implement
 	pSeekBehavior->SetTarget(Target);
+}
+
+void Flock::InitializeSteering()
+{
+	std::vector<BlendedSteering::WeightedBehavior> weightedBehaviors;
+
+	pSeparationBehavior = std::make_unique<Separation>(this);
+	pCohesionBehavior = std::make_unique<Cohesion>(this);
+	pVelMatchBehavior = std::make_unique<VelocityMatch>(this);
+	pWanderBehavior = std::make_unique<Wander>();
+	pSeekBehavior = std::make_unique<Seek>();
+
+	weightedBehaviors.emplace_back(pSeparationBehavior.get(), 1.0f);
+	weightedBehaviors.emplace_back(pCohesionBehavior.get(), 1.0f);
+	weightedBehaviors.emplace_back(pVelMatchBehavior.get(), 1.0f);
+	weightedBehaviors.emplace_back(pWanderBehavior.get(), 0.3f);
+	weightedBehaviors.emplace_back(pSeekBehavior.get(), 0.7f);
+
+	pBlendedSteering = std::make_unique<BlendedSteering>(weightedBehaviors);
+
+	pEvadeBehavior = std::make_unique<Evade>();
+
+	std::vector<ISteeringBehavior*> priorityBehaviors;
+
+	pPrioritySteering = std::make_unique<PrioritySteering>(priorityBehaviors);
+	pPrioritySteering->AddBehaviour(pEvadeBehavior.get());
+	pPrioritySteering->AddBehaviour(pBlendedSteering.get());
 }
 

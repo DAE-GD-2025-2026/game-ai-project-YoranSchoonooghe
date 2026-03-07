@@ -1,7 +1,7 @@
 ﻿#pragma once
 
 // Toggle this define to enable/disable spatial partitioning
-//#define GAMEAI_USE_SPACE_PARTITIONING
+#define GAMEAI_USE_SPACE_PARTITIONING
 
 #include "FlockingSteeringBehaviors.h"
 #include "Movement/SteeringBehaviors/SteeringAgent.h"
@@ -9,9 +9,9 @@
 #include "Movement/SteeringBehaviors/CombinedSteering/CombinedSteeringBehaviors.h"
 #include <memory>
 #include "imgui.h"
-#ifdef GAMEAI_USE_SPACE_PARTITIONING
+//#ifdef GAMEAI_USE_SPACE_PARTITIONING
 //#include "../SpacePartitioning/SpacePartitioning.h"
-#endif
+//#endif
 
 class CellSpace;
 
@@ -32,8 +32,6 @@ public:
 	void RenderDebug();
 	void ImGuiRender(ImVec2 const& WindowPos, ImVec2 const& WindowSize);
 
-	void RenderNeighborhood();
-
 #ifdef GAMEAI_USE_SPACE_PARTITIONING
 	const TArray<ASteeringAgent*>& GetNeighbors() const;
 	int GetNrOfNeighbors() const;
@@ -49,6 +47,10 @@ public:
 	void SetTarget_Seek(FSteeringParams const & Target);
 
 private:
+	void InitializeSteering();
+
+	void RenderNeighborhood();
+
 	// For debug rendering purposes
 	UWorld* pWorld{nullptr};
 	
@@ -83,11 +85,9 @@ private:
 
 	// UI and rendering
 	bool DebugRenderSteering{false};
+	bool DebugRenderEvadeSteering{ true };
 	bool DebugRenderNeighborhood{true};
 	bool DebugRenderPartitions{true};
-
-	//void RenderNeighborhood();
-	bool UseSpatialPartitioning = false;
 
 	CellSpace* pCellSpace{};
 };
