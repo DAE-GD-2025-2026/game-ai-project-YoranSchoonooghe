@@ -21,6 +21,10 @@ There is another agent in the scene, an agent that every agent in the flock trie
 
 - Evade: Move away from the predicted position of the moving target
 
+<p align="center">
+  <img src="Resources/FlockEvading.gif" width="400"/>
+</p>
+
 This behavior should overrule any of the other behaviors, and therefore it is not added to the blended steering. Instead, the flock has a priority steering with the following behaviors:
 
 1) Evade
