@@ -26,6 +26,9 @@ protected:
 
 	FVector2D CalculatePredictedPosition(ASteeringAgent& Agent);
 	void DrawTarget(ASteeringAgent& Agent);
+	void DrawForwardSpeed(ASteeringAgent& Agent);
+	void DrawToTarget(ASteeringAgent& Agent, const FVector2D& target);
+	void DrawAngularSpeed(ASteeringAgent& Agent);
 };
 
 // Your own SteeringBehaviors should follow here...

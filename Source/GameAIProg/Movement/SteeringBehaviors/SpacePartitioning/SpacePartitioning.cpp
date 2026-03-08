@@ -171,7 +171,7 @@ void CellSpace::RenderCells(bool showCount) const
 				FVector(CENTER_X, CENTER_Y, 20.f),
 				AgentCountText,
 				nullptr,
-				FColor::Red,
+				FColor::Purple,
 				0.01f,
 				false,
 				1.5f

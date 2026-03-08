@@ -21,8 +21,8 @@ public:
 	Flock(
 	UWorld* pWorld,
 	TSubclassOf<ASteeringAgent> AgentClass,
-	int FlockSize = 10, 
-	float WorldSize = 100.f, 
+	int FlockSize = 10,
+	float WorldSize = 100.f,
 	ASteeringAgent* const pAgentToEvade = nullptr, 
 	bool bTrimWorld = false);
 
