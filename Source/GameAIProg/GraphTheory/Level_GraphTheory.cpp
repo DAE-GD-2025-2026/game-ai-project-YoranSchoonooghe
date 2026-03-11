@@ -47,11 +47,13 @@ void ALevel_GraphTheory::BeginPlay()
 	auto NodeId1 = Graph.AddNode(std::make_unique<Node>(FVector2D(0.f, 0.f)));
 	auto NodeId2 = Graph.AddNode(std::make_unique<Node>(FVector2D(100.f, 100.f)));
 	Graph.AddConnection(NodeId1, NodeId2);
+	Graph.SetConnectionCostsToDistances();
 
 	// Spawn the Agent
 	Agent = GetWorld()->SpawnActor<ASteeringAgent>(SteeringAgentClass, 
 	FVector{0,0,90}, FRotator::ZeroRotator);
 	Agent->SetSteeringBehavior(&PathFollow);
+	Agent->SetDebugRenderingEnabled(false);
 }
 
 void ALevel_GraphTheory::BeginDestroy()
@@ -62,6 +64,14 @@ void ALevel_GraphTheory::BeginDestroy()
 void ALevel_GraphTheory::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	static int lastNodeCount = -1;
+	static int lastConnectionCount = -1;
+
+	int currentNodeCount = Graph.GetNodeCount();
+	int currentConnectionCount = static_cast<int>(Graph.GetConnections().size());
+
+	bool bGraphChanged = (currentNodeCount != lastNodeCount || currentConnectionCount != lastConnectionCount);
 	
 #pragma region UI
 	{
@@ -105,8 +115,25 @@ void ALevel_GraphTheory::Tick(float DeltaTime)
 	Renderer.RenderGraph(Graph);
 	
 	// TODO Check if the graph has updated
-	// TODO if so, run the EulerianPath algorithm
-	// TODO if a path is found, have the agent follow it
+	if (bGraphChanged)
+	{
+		// TODO if so, run the EulerianPath algorithm
+		EulerianPath pathSolver(&Graph);
+		Eulerianity eulerianity;
+
+		std::vector<Node*> trail = pathSolver.FindPath(eulerianity);
+
+		// TODO if a path is found, have the agent follow it
+		if (!trail.empty())
+		{
+			UpdateAgentPath(trail);
+
+			lastNodeCount = currentNodeCount;
+			lastConnectionCount = currentConnectionCount;
+
+			Graph.SetConnectionCostsToDistances();
+		}
+	}
 }
 
 void ALevel_GraphTheory::UpdateAgentPath(std::vector<Node*> const& Trail)
@@ -114,6 +141,14 @@ void ALevel_GraphTheory::UpdateAgentPath(std::vector<Node*> const& Trail)
 	std::vector<FVector2D> path{};
 	
 	// TODO convert Node vector to positions vector
+	path.reserve(Trail.size());
+	for (Node* node : Trail)
+	{
+		if (node)
+		{
+			path.emplace_back(node->GetPosition());
+		}
+	}
 
 	PathFollow.SetPath(path);
 	if (path.size() > 0)
