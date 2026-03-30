@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GraphTheory/Level_GraphTheory.h"
 #include "Shared/Graph/NavGraph/NavGraph.h"
+#include "GraphTheory/Algorithms/NavGraphPathfinding.h"
 #include "Level_Navmesh.generated.h"
 
 UCLASS()
@@ -36,12 +37,17 @@ private:
 	ASteeringAgent* Agent{nullptr}; // ref
 	PathFollow PathFollow{};
 	std::vector<FVector2D> DebugDrawPath{};
+	std::vector<GameAI::NavLine> DebugDrawPortals{};
+	std::vector<FVector2D> DebugDrawSSFAPath{};
 	
 	bool bDrawNavPolyVertices{false};
 	bool bDrawNavPoly{true};
 	bool bDrawNavGraph{true};
 	bool bDrawPath{true};
 	bool bDrawPortals{false};
+	bool bDrawSSFAPath{false};
+
+	bool bUseSSFA{ true };
 	
 	void UpdateImGui();
 	

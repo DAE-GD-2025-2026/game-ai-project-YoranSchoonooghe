@@ -9,7 +9,7 @@
 using namespace GameAI;
 
 std::vector<FVector2D> NavMeshPathfinding::FindPath(const FVector2D& startPos, const FVector2D& endPos,
-	NavGraph* const pNavGraph, std::vector<FVector2D>& debugNodePositions, std::vector<NavLine>& debugPortals) 
+	NavGraph* const pNavGraph, std::vector<FVector2D>& debugNodePositions, std::vector<NavLine>& debugPortals, bool useSSFA) 
 {
 	//Create the path to return
 	std::vector<FVector2D> finalPath{};
@@ -18,12 +18,18 @@ std::vector<FVector2D> NavMeshPathfinding::FindPath(const FVector2D& startPos, c
 	auto const& startTriangle = pNavGraph->GetNavPolygon()->GetTriangleAtPosition(startPos, true);
 	auto const& endTriangle = pNavGraph->GetNavPolygon()->GetTriangleAtPosition(endPos, true);
 
-	if (!startTriangle || !endTriangle) return finalPath;
+	if (!startTriangle || !endTriangle)
+	{
+		debugNodePositions = finalPath;
+
+		return finalPath;
+	}
 
 	if (startTriangle == endTriangle)
 	{
 		finalPath.push_back(startPos);
 		finalPath.push_back(endPos);
+		debugNodePositions = finalPath;
 
 		return finalPath;
 	}
@@ -79,20 +85,22 @@ std::vector<FVector2D> NavMeshPathfinding::FindPath(const FVector2D& startPos, c
 	std::vector<Node*> pPathNodes = pathFinder.FindPath(pStartNode, pEndNode);
 
 	finalPath.reserve(pPathNodes.size());
-	debugNodePositions.reserve(pPathNodes.size());
 	for (const auto pPathNode : pPathNodes)
 	{
-		const auto nodePosition = pPathNode->GetPosition();
+		const auto& nodePosition = pPathNode->GetPosition();
 
 		finalPath.emplace_back(nodePosition);
-
-		//Debug Visualisation
-		debugNodePositions.emplace_back(nodePosition);
 	}
 
+	//Debug Visualisation
+	debugNodePositions = finalPath;
+
 	// Extra: Run optimiser on new graph (First check if everything works without SSFA!)
-	// debugPortals = SSFA::FindPortals(nodes, *pNavGraph->GetNavPolygon());
-	// finalPath = SSFA::OptimizePortals(debugPortals, *pNavGraph->GetNavPolygon());
+	debugPortals = SSFA::FindPortals(pPathNodes, *pNavGraph->GetNavPolygon());
+	if (useSSFA)
+	{
+		finalPath = SSFA::OptimizePortals(debugPortals, *pNavGraph->GetNavPolygon());
+	}
 	
 	return finalPath;
 }

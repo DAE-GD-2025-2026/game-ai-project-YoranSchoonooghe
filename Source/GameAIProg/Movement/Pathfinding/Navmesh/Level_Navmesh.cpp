@@ -98,10 +98,54 @@ void ALevel_Navmesh::Tick(float DeltaTime)
 	}
 	
 	// Todo: Draw the portals travelled through with SSFA
-	// if (bDrawPortals)
-	// {
-	// 	
-	// }
+	 if (bDrawPortals)
+	 {
+		 for (const auto& portal : DebugDrawPortals)
+		 {
+			 DrawDebugLine(
+				 GetWorld(),
+				 FVector{ portal.P1, 5.0f },
+				 FVector{ portal.P2, 5.0f },
+				 FColor::Green, false, -1, 1, 10);
+			 
+			 if (portal.P1 != portal.P2)
+			 {
+				 DrawDebugString(
+					 GetWorld(),
+					 FVector(portal.P1, 5.0f),
+					 "P1",
+					 nullptr,
+					 FColor::Purple,
+					 0.01f,
+					 false,
+					 1.5f
+				 );
+
+				 DrawDebugString(
+					 GetWorld(),
+					 FVector(portal.P2, 5.0f),
+					 "P2",
+					 nullptr,
+					 FColor::Purple,
+					 0.01f,
+					 false,
+					 1.5f
+				 );
+			 }
+		}
+	 }
+
+	 if (bDrawSSFAPath)
+	 {
+		 for (int PathIdx = 1; PathIdx < DebugDrawSSFAPath.size(); ++PathIdx)
+		 {
+			 DrawDebugLine(
+				 GetWorld(),
+				 FVector{ DebugDrawSSFAPath[PathIdx - 1], 5.0f },
+				 FVector{ DebugDrawSSFAPath[PathIdx], 5.0f },
+				 FColor::Cyan, false, -1, 1, 10);
+		 }
+	 }
 	
 	UpdateImGui();
 }
@@ -147,7 +191,11 @@ void ALevel_Navmesh::UpdateImGui()
 		ImGui::Checkbox("NavPoly", &bDrawNavPoly);
 		ImGui::Checkbox("NavGraph", &bDrawNavGraph);
 		ImGui::Checkbox("Path", &bDrawPath);
+
+		ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing();
+		ImGui::Checkbox("Use SSFA", &bUseSSFA);
 		ImGui::Checkbox("Portals", &bDrawPortals);
+		ImGui::Checkbox("SSFAPath", &bDrawSSFAPath);
 		
 		//End
 		ImGui::End();
@@ -215,10 +263,23 @@ TArray<TArray<FVector>> ALevel_Navmesh::ExtractNavMeshTris() const
 void ALevel_Navmesh::SetTarget()
 {
 	GameAI::NavMeshPathfinding Pathfinder{};
-	std::vector<FVector2D> Path =  Pathfinder.FindPath(Agent->GetPosition(), 
-	FVector2D{LatestMouseWorldPos}, NavigationGraph.get());
+	std::vector<FVector2D> Path =  Pathfinder.FindPath(
+		Agent->GetPosition(), 
+		FVector2D{LatestMouseWorldPos},
+		NavigationGraph.get(),
+		DebugDrawPath,
+		DebugDrawPortals,
+		bUseSSFA
+	);
 
-	DebugDrawPath = Path;
+	if (bUseSSFA)
+	{
+		DebugDrawSSFAPath = Path;
+	}
+	else
+	{
+		DebugDrawSSFAPath.clear();
+	}
 	
 	PathFollow.SetPath(Path);
 	if (Path.size() > 0)
