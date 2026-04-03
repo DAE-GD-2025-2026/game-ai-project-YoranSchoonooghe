@@ -47,7 +47,7 @@ private:
 	bool bDrawPortals{false};
 	bool bDrawSSFAPath{false};
 
-	bool bUseSSFA{ true };
+	bool bUseSSFA{ false };
 	
 	void UpdateImGui();
 	
