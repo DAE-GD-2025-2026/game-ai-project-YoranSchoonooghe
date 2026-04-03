@@ -53,7 +53,7 @@ The A* pathfinding is an algorithm to find the shortest path between a starting 
 </p>
 
 ### Navigation Meshes
-Instead of using a waypoint graph, which allows navigation from node to node using connections, a navigation mesh can be used. A navigation mesh allows an agent to move to any point within a walkable space, defined by a navigation polygon. In the images below, the middle image shows a navigation polygon (yellow) for the level in the left image.
+Instead of using a waypoint graph, which allows navigation from node to node using connections, we can use a navigation mesh. A navigation mesh allows an agent to move to any point within a walkable space, defined by a navigation polygon. In the images below, the middle image shows a navigation polygon (yellow) for the level in the left image.
 
 The navigation polygon is made up of triangles, where the edges will be used to generate nodes for a navigation graph. There are multiple ways to create this navigation graph, for instance by creating a node at the center of each edge which is shared by 2 triangles. The connections of the graph can then be defined by connecting all nodes in a triangle, leading to 1 connection for a triangle with 2 nodes and 3 connections for a triangle with 3 nodes. The right image below shows the resulting navigation graph for the navigation polygon, where the red circles visualize the nodes and the blue lines represent the connections.
 
@@ -68,7 +68,7 @@ An agent can now move from a starting point to a target point, by adding the sta
 </p>
 
 ### Path Smoothing
-The previous path is obviously not the optimal solution. There are several path smoothing techniques to get a shorter path, for instance by using the Simple Stupid Funnel Algorithm ([SSFA](http://digestingduck.blogspot.be/2010/03/simple-stupid-funnel-algorithm.html)). SSFA treats the shared edges of the triangles that the path crosses as portals. For each portal, P1 and P2 are the right and left points of the portal, respectively, and relative to the start point.
+The previous path is obviously not the optimal solution. There are several path smoothing techniques to get a shorter path, one being the Simple Stupid Funnel Algorithm ([SSFA](http://digestingduck.blogspot.be/2010/03/simple-stupid-funnel-algorithm.html)). SSFA treats the shared edges of the triangles that the path crosses as portals. For each portal, P1 and P2 are the relative right and left points of the portal, respectively.
 
 <p align="center">
   <img src="Resources/Portals.gif" width="400"/>
