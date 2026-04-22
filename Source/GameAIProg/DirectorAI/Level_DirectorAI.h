@@ -3,6 +3,10 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "DirectorAI.h"
+#include "GraphTheory/Level_GraphTheory.h"
+#include "Shared/Graph/NavGraph/NavGraph.h"
+#include "GraphTheory/Algorithms/NavGraphPathfinding.h"
 #include "Shared/Level_Base.h"
 #include "Level_DirectorAI.generated.h"
 
@@ -12,41 +16,34 @@ class GAMEAIPROG_API ALevel_DirectorAI : public ALevel_Base
 	GENERATED_BODY()
 
 public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "NavmeshLevel|Input")
+	UInputAction* SetTargetAction{};
 
 	ALevel_DirectorAI();
 
 	virtual void Tick(float DeltaTime) override;
 
+	virtual void BindLevelInputActions() override;
+
 protected:
 	virtual void BeginPlay() override;
 
 private:
-	void UpdateIntensity();
-	void UpdateDirectorState(float DeltaTime);
-	void MoveToNextState();
+	std::unique_ptr<GameAI::NavGraph> NavigationGraph;
+	std::unique_ptr<GameAI::GraphRenderer> Renderer;
+
+	UPROPERTY()
+	ADirectorAI* DirectorAI{ nullptr };
 
 	UPROPERTY()
 	ASteeringAgent* Agent{ nullptr };
+	PathFollow PathFollow{};
 
-	enum class DirectorAIState
-	{
-		Relax,
-		BuildUp,
-		Peak
-	};
-	const char* ToString(DirectorAIState state);
-
-	DirectorAIState DirectorState{ DirectorAIState::Relax };
-	float MaxTimeInState{ 50.0f };
-	float MinTimeInState{ 10.0f };
-	float TimeInCurrentState{ 0.0f };
-
-	float IntensityLevel{ 0 };
-	
-	int PlayerHealth{ 100 };
-	int RecentDamageTaken{ 0 };
-	int NearbyEnemies{ 0 };
+	const char* ToString(ADirectorAI::State state);
 
 	void UpdateImGui();
 
+	TArray<TArray<FVector>> ExtractNavMeshTris() const;
+
+	void SetTarget();
 };
